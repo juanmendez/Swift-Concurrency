@@ -23,19 +23,12 @@ struct ContentView: View {
     }
 
     func threadStuff() {
-        let _ = DispatchQueue.main
-        let globalQ = DispatchQueue.global()
-
-        globalQ.async {
-            let thread = Thread.current
-
-            message = if thread.isMainThread {
-                "main thread"
-            } else {
-                "not main thread"
+        let myQ = DispatchQueue(label: "myQ")
+        for x in 0..<10 {
+            myQ.async {
+                message += "\(x)\n"
             }
         }
-
 
     }
 }
