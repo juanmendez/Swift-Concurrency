@@ -8,28 +8,50 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State var message = ""
+    @State var status = ""
     var body: some View {
         VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text(message)
+            Text(status)
+            Button {
+                status = "Downloading..."
+                cacheImages()
+            } label: {
+                Text("Cache Images")
+            }
         }
         .padding()
-        .onAppear {
-            threadStuff()
-        }
     }
 
-    func threadStuff() {
-        let myQ = DispatchQueue(label: "myQ")
-        for x in 0..<10 {
-            myQ.async {
-                message += "\(x)\n"
+    func cacheImages() {
+        let startTime = Date.now
+
+        var safeImagesCached = [String]()
+
+        imageURLs.map { url in
+            if let safeUrl = URL(string: url), let data = safeUrl.fetchData() {
+                return data.cache()
+            } else {
+                return nil
+            }
+        }.forEach {
+            if let urlString = $0 {
+                safeImagesCached.append(urlString)
             }
         }
 
+        var count = 0
+        safeImagesCached.forEach { filename in
+            count += 1
+            print("\(count) of \(imageURLs.count) - \(Date.now) - \(filename)")
+
+            if count == safeImagesCached.count {
+                status = "Duration: \(-startTime.timeIntervalSinceNow)"
+            } else {
+                status = "Downloaded: \(count) of \(imageURLs.count)"
+            }
+        }
+
+        print(status)
     }
 }
 
