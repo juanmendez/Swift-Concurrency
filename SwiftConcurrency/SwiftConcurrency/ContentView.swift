@@ -13,7 +13,7 @@ struct ContentView: View {
         VStack {
             Text(status)
             Button {
-                status = "Downloading..."
+                status = "Download"
                 cacheImages()
             } label: {
                 Text("Cache Images")
@@ -23,35 +23,26 @@ struct ContentView: View {
     }
 
     func cacheImages() {
+        let myQ = DispatchQueue(label: "com.example.myQueue", attributes: .concurrent)
+
+        let safeUrls = imageURLs.compactMap { URL(string: $0) }
         let startTime = Date.now
+        var downloaded = 0
 
-        var safeImagesCached = [String]()
+        safeUrls.forEach { safeUrl in
+            myQ.async {
+                if let data = safeUrl.fetchData(), let fileName = data.cache() {
+                    downloaded += 1
 
-        imageURLs.map { url in
-            if let safeUrl = URL(string: url), let data = safeUrl.fetchData() {
-                return data.cache()
-            } else {
-                return nil
-            }
-        }.forEach {
-            if let urlString = $0 {
-                safeImagesCached.append(urlString)
-            }
-        }
-
-        var count = 0
-        safeImagesCached.forEach { filename in
-            count += 1
-            print("\(count) of \(imageURLs.count) - \(Date.now) - \(filename)")
-
-            if count == safeImagesCached.count {
-                status = "Duration: \(-startTime.timeIntervalSinceNow)"
-            } else {
-                status = "Downloaded: \(count) of \(imageURLs.count)"
+                    status =
+                        if downloaded == safeUrls.count {
+                            "Duration: \(-startTime.timeIntervalSinceNow)"
+                        } else {
+                            "Downloaded: \(fileName)"
+                        }
+                }
             }
         }
-
-        print(status)
     }
 }
 
