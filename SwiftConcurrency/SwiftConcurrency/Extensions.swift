@@ -8,7 +8,7 @@
 import Foundation
 
 extension Data {
-    func cache() -> String? {
+    func cache() async -> String? {
         let fileName = UUID().uuidString
         let urlStr = NSTemporaryDirectory() + fileName
         let url = URL(fileURLWithPath: urlStr)
@@ -22,7 +22,54 @@ extension Data {
 }
 
 extension URL {
-    func fetchData() -> Data? {
-        try? Data(contentsOf: self)
+    func fetchData() async -> Data? {
+        try? await URLSession.shared.data(from: self).0
+    }
+}
+
+extension Sequence {
+    func forEachAsyncInSequence(
+        _ operation: @escaping (Element) async throws -> Void
+    ) async rethrows {
+        for element in self {
+            try? await operation(element)
+        }
+    }
+
+    func forEachAsyncInParallel(
+        _ operation: @escaping (Element) async throws -> Void
+    ) async rethrows {
+        await withTaskGroup() { group in
+            for element in self {
+                group.addTask {
+                    try? await operation(element)
+                }
+            }
+        }
+    }
+}
+
+extension String {
+    /// Checks if
+    var isNotEmpty: Bool  {
+        isEmpty == false
+    }
+
+    var isBlank : Bool {
+        trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var isNotBlank : Bool {
+        isNotEmpty && !trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+}
+
+extension String? {
+    var hasContent : Bool {
+        if let self {
+            self.isNotBlank
+        } else {
+            false
+        }
     }
 }
