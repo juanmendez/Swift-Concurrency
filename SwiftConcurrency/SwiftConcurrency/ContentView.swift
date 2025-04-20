@@ -14,7 +14,9 @@ struct ContentView: View {
             Text(status)
             Button {
                 status = "Download"
-                cacheImages()
+                Task {
+                    try? await cacheImages()
+                }
             } label: {
                 Text("Cache Images")
             }
@@ -22,24 +24,20 @@ struct ContentView: View {
         .padding()
     }
 
-    func cacheImages() {
-        let myQ = DispatchQueue(label: "com.example.myQueue", attributes: .concurrent)
-
+    func cacheImages() async throws {
         let safeUrls = imageURLs.compactMap { URL(string: $0) }
         let startTime = Date.now
         var downloaded = 0
 
-        safeUrls.forEach { safeUrl in
-            myQ.async {
-                if let data = safeUrl.fetchData(), let fileName = data.cache() {
-                    downloaded += 1
+        await safeUrls.forEachAsyncInParalell { safeUrl in
+            if let data = await safeUrl.fetchData(), let fileName = await data.cache() {
+                downloaded += 1
 
-                    status =
-                        if downloaded == safeUrls.count {
-                            "Duration: \(-startTime.timeIntervalSinceNow)"
-                        } else {
-                            "Downloaded: \(fileName)"
-                        }
+                status =
+                if downloaded == safeUrls.count {
+                    "Duration: \(-startTime.timeIntervalSinceNow)"
+                } else {
+                    "Downloaded: \(fileName)"
                 }
             }
         }
