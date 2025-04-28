@@ -30,16 +30,16 @@ struct ContentView: View {
     func cacheImages() async throws -> [URL] {
         let safeUrls = imageURLs.compactMap { URL(string: $0) }
         let startTime = Date.now
-        var downloaded = 0
+        let downLoadCounter = DownloadCounter()
 
         var urls = [URL]()
         await safeUrls.forEachAsyncInParallel { safeUrl in
             if let data = await safeUrl.fetchDataDeferred(), let fileName = await data.cache() {
                 urls.append(safeUrl)
-                downloaded += 1
+                await downLoadCounter.increment()
 
                 status =
-                    if downloaded == safeUrls.count {
+                if await downLoadCounter.count == safeUrls.count {
                         "Duration: \(-startTime.timeIntervalSinceNow)"
                     } else {
                         "Downloaded: \(fileName)"
@@ -48,6 +48,14 @@ struct ContentView: View {
         }
 
         return urls
+    }
+}
+
+actor DownloadCounter {
+    var count = 0
+
+    func increment() {
+        count += 1
     }
 }
 
